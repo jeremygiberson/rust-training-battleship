@@ -193,21 +193,15 @@ fn expand(location: Location, class: ShipType, direction: Direction) -> Result<V
     Err(format!("Not enough room to place a {} at {} {}", class, location, direction))
 }
 
-fn ship_at(game: &GameState, location: &Location) -> bool {
-    for ship in game.p1_ships.iter() {
+fn ship_at(game: &GameState, player: &PlayerType, location: &Location) -> bool {
+    for ship in game.ships(&player) {
         for ship_location in ship.locations.iter() {
             if ship_location.eq(&location) {
                 return true;
             }
         }
     }
-    for ship in game.p2_ships.iter() {
-        for ship_location in ship.locations.iter() {
-            if ship_location.eq(&location) {
-                return true;
-            }
-        }
-    }
+
     return false;
 }
 
@@ -221,31 +215,16 @@ fn place(game_state: GameState, player: PlayerType, class: ShipType, location: L
     // validate placement
     let mut expanded_locations = expand(location, class, direction)?;
     for loc in expanded_locations.iter() {
-        if ship_at(&game_state, &loc) {
+        if ship_at(&game_state, &player, &loc) {
             return Err(format!("Cannot place a ship at {} {}, as it would overlap another ship.", location, direction));
         }
     }
 
-
     // attempt to place
-    match player {
-        PlayerType::Player1 => {
-            for mut ship in game.p1_ships.iter_mut() {
-                if ship.class == class && ship.locations.len() == 0 {
-                    ship.locations.append(&mut expanded_locations);
-                    return Ok(game);
-                }
-            }
-        }
-        PlayerType::Player2 => {
-            for mut ship in game.p2_ships.iter_mut() {
-                if ship.class == class && ship.locations.len() == 0 {
-                    if ship.class == class && ship.locations.len() == 0 {
-                        ship.locations.append(&mut expanded_locations);
-                        return Ok(game);
-                    }
-                }
-            }
+    for mut ship in game.ships_mut(&player) {
+        if ship.class == class && ship.locations.len() == 0 {
+            ship.locations.append(&mut expanded_locations);
+            return Ok(game);
         }
     }
     Err(format!("There are no ships of class {} left to place", class))
@@ -253,24 +232,13 @@ fn place(game_state: GameState, player: PlayerType, class: ShipType, location: L
 
 fn remove(game_state: &GameState, player: PlayerType, class: ShipType, location: Location) -> Result<GameState, String> {
     let mut game = game_state.clone();
-    match player {
-        PlayerType::Player1 => {
-            for ship in game.p1_ships.iter_mut() {
-                if ship.class == class && ship.locations.contains( &location) {
-                    ship.locations.clear();
-                    return Ok(game);
-                }
-            }
-        }
-        PlayerType::Player2 => {
-            for ship in game.p2_ships.iter_mut() {
-                if ship.class == class && ship.locations.contains( &location) {
-                    ship.locations.clear();
-                    return Ok(game);
-                }
-            }
+    for mut ship in game.ships_mut(&player) {
+        if ship.class == class && ship.locations.contains( &location) {
+            ship.locations.clear();
+            return Ok(game);
         }
     }
+
     return Err(format!("Could not find a {} at {}", class, location));
 }
 
