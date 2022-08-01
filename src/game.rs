@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use crate::location::Location;
 use crate::player::{PlayerTurn, PlayerType};
 use crate::ship::{Ship, ShipType};
+use crate::shot::Shot;
 
 const GRID_WIDTH: u32 = 10;
 const GRID_HEIGHT: u32 = 10;
@@ -50,12 +51,6 @@ impl Display for Direction {
             Direction::Right => f.write_str("Right"),
         }
     }
-}
-
-#[derive(Eq, PartialEq, Clone)]
-pub struct Shot {
-    pub location: Location,
-    pub hit: bool
 }
 
 #[derive(Clone)]
@@ -123,6 +118,10 @@ impl GameState {
     pub fn last_message(&self) -> Option<&String> {
         return self.messages.last();
     }
+
+    // pub fn to_string() -> String {
+    //
+    // }
 }
 
 // check if players have placed all ships

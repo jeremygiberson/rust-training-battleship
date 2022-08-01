@@ -90,7 +90,7 @@ impl Ship {
         return str;
     }
 
-    fn from_str(input: &str) -> Result<Self, String> {
+    pub fn from_str(input: &str) -> Result<Self, String> {
         let parts = input.split("|").collect::<Vec<&str>>();
         if parts.len() != 3 {
             return Err(format!("Expected serialized ship to contain 3 | separated values, found {}", parts.len()));
@@ -110,13 +110,39 @@ impl Ship {
     }
 }
 
+pub fn ships_to_string(ships: &Vec<Ship>) -> String {
+    return ships.iter().map(|l| l.to_string()).collect::<Vec<String>>().join("&");
+}
+
+pub fn ships_from_str(serialized: &str) -> Result<Vec<Ship>,String> {
+    let ships: Vec<Ship> = serialized
+        .split("&")
+        .collect::<Vec<&str>>()
+        .iter()
+        .filter_map( | input: &&str | -> Option<Ship> {
+            let result = Ship::from_str(input);
+            return if result.is_ok() {
+                Some(result.unwrap())
+            } else {
+                None
+            }
+        }).collect();
+
+    let expected_count = serialized
+        .split(";").count();
+
+    if expected_count != ships.len() {
+        return Err(format!("Expected to deserialize {} ships but only deserialized {}", expected_count, ships.len()));
+    }
+    return Ok(ships);
+}
 
 
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
     use crate::location::Location;
-    use crate::ship::{Ship, ShipType};
+    use crate::ship::{Ship, ships_to_string, ShipType};
 
     #[test]
     fn ship_type_to_string() {
@@ -176,5 +202,29 @@ mod tests {
                 Location{row: 1, col: 2},
             ]
         }))
+    }
+
+    #[test]
+    fn serialize_ships_to_string() {
+        let ships: Vec<Ship> = vec![
+            Ship{
+                class: ShipType::Submarine,
+                locations: vec![
+                    Location{ row: 0, col: 0 },
+                    Location{ row: 1, col: 0 }
+                ],
+                hits: 0
+            },
+            Ship{
+                class: ShipType::Destroyer,
+                locations: vec![
+                    Location{ row: 0, col: 1 },
+                    Location{ row: 1, col: 1 }
+                ],
+                hits: 0
+            }
+        ];
+        let string = ships_to_string(&ships);
+        assert_eq!(string, String::from("Submarine|0|0,0;0,1&Destroyer|0|1,0;1,1"));
     }
 }

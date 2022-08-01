@@ -2,6 +2,7 @@ mod game;
 mod ship;
 mod location;
 mod player;
+mod shot;
 
 
 fn main() {
